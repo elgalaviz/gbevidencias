@@ -11,9 +11,10 @@ interface ProjectFormProps {
   clients: ProfileOption[]
   contractors: ProfileOption[]
   userId: string
+  userRole: 'god' | 'contratista'
 }
 
-export default function ProjectForm({ clients, contractors, userId }: ProjectFormProps) {
+export default function ProjectForm({ clients, contractors, userId, userRole }: ProjectFormProps) {
   const router = useRouter()
   const supabase = createClient()
 
@@ -43,7 +44,8 @@ export default function ProjectForm({ clients, contractors, userId }: ProjectFor
         description: form.description || null,
         address: form.address || null,
         client_id: form.client_id,
-        contractor_id: form.contractor_id || null,
+        // Si es contratista, asignarse a sí mismo; si es GOD, usar el seleccionado
+        contractor_id: userRole === 'contratista' ? userId : (form.contractor_id || null),
         status: form.status as Database['public']['Tables']['projects']['Row']['status'],
         created_by: userId,
       }
@@ -108,7 +110,7 @@ export default function ProjectForm({ clients, contractors, userId }: ProjectFor
       </div>
 
       {/* Cliente y Contratista */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className={`grid grid-cols-1 ${userRole === 'god' ? 'md:grid-cols-2' : ''} gap-5`}>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Cliente <span className="text-red-500">*</span>
@@ -133,23 +135,35 @@ export default function ProjectForm({ clients, contractors, userId }: ProjectFor
           )}
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Contratista <span className="text-gray-400 text-xs">(opcional)</span>
-          </label>
-          <select
-            value={form.contractor_id}
-            onChange={(e) => set('contractor_id', e.target.value)}
-            className="input"
-          >
-            <option value="">Sin contratista</option>
-            {contractors.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.full_name} — {c.email}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Solo mostrar selector de contratista si es GOD */}
+        {userRole === 'god' && (
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Contratista <span className="text-gray-400 text-xs">(opcional)</span>
+            </label>
+            <select
+              value={form.contractor_id}
+              onChange={(e) => set('contractor_id', e.target.value)}
+              className="input"
+            >
+              <option value="">Sin contratista</option>
+              {contractors.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.full_name} — {c.email}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Mostrar info si es contratista */}
+        {userRole === 'contratista' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800">
+              <span className="font-semibold">ℹ️ Nota:</span> Serás asignado automáticamente como el contratista de este proyecto.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Estado */}

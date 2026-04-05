@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Database, UserRole } from '@/types/database'
-import { Plus, Users, Mail, Phone, Building2 } from 'lucide-react'
+import { Plus, Users, Mail, Phone, Building2, Edit } from 'lucide-react'
 
 type ProfileRow = {
   id: string
@@ -12,6 +12,8 @@ type ProfileRow = {
   role: UserRole
   company_name: string | null
   phone: string | null
+  avatar_url: string | null
+  logo_url: string | null
   created_at: string
 }
 
@@ -38,13 +40,21 @@ export default async function UsersPage({
     .eq('id', session.user.id)
     .single() as { data: { role: UserRole } | null }
 
-  if (profile?.role !== 'god') redirect('/dashboard')
+  if (profile?.role !== 'god' && profile?.role !== 'contratista') redirect('/dashboard')
 
   let query = supabase
     .from('profiles')
-    .select('id, full_name, email, role, company_name, phone, created_at')
+    .select('id, full_name, email, role, company_name, phone, avatar_url, logo_url, created_at')
     .order('created_at', { ascending: false })
 
+  // Si es contratista, solo mostrar usuarios que él creó (clientes y ayudantes)
+  if (profile?.role === 'contratista') {
+    query = query
+      .eq('created_by', session.user.id)
+      .in('role', ['cliente', 'ayudante'])
+  }
+
+  // Filtro por rol seleccionado
   if (searchParams.role && searchParams.role !== 'all') {
     query = query.eq('role', searchParams.role as UserRole)
   }
@@ -59,13 +69,20 @@ export default async function UsersPage({
       )
     : users
 
-  const tabs = [
-    { key: 'all', label: 'Todos' },
-    { key: 'cliente', label: '🏢 Clientes' },
-    { key: 'contratista', label: '👷 Contratistas' },
-    { key: 'ayudante', label: '🔧 Ayudantes' },
-    { key: 'god', label: '👑 GOD' },
-  ]
+  // Tabs según el rol
+  const tabs = profile?.role === 'god' 
+    ? [
+        { key: 'all', label: 'Todos' },
+        { key: 'cliente', label: '🏢 Clientes' },
+        { key: 'contratista', label: '👷 Contratistas' },
+        { key: 'ayudante', label: '🔧 Ayudantes' },
+        { key: 'god', label: '👑 GOD' },
+      ]
+    : [
+        { key: 'all', label: 'Todos' },
+        { key: 'cliente', label: '🏢 Clientes' },
+        { key: 'ayudante', label: '🔧 Ayudantes' },
+      ]
 
   // Conteos por rol
   const counts = {
@@ -89,24 +106,69 @@ export default async function UsersPage({
         </Link>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[
-          { role: 'cliente', label: 'Clientes', count: counts.cliente, color: 'text-blue-500 bg-blue-100' },
-          { role: 'contratista', label: 'Contratistas', count: counts.contratista, color: 'text-green-500 bg-green-100' },
-          { role: 'ayudante', label: 'Ayudantes', count: counts.ayudante, color: 'text-yellow-500 bg-yellow-100' },
-          { role: 'god', label: 'GOD', count: counts.god, color: 'text-purple-500 bg-purple-100' },
-        ].map((stat) => (
-          <div key={stat.role} className="card flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}>
-              <Users size={18} />
+      {/* Stats - Solo mostrar stats relevantes según rol */}
+      <div className={`grid grid-cols-2 ${profile?.role === 'god' ? 'lg:grid-cols-4' : 'lg:grid-cols-2'} gap-4 mb-6`}>
+        {profile?.role === 'god' ? (
+          <>
+            <div className="card flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-blue-500 bg-blue-100">
+                <Users size={18} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{counts.cliente}</p>
+                <p className="text-gray-400 text-xs">Clientes</p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-800">{stat.count}</p>
-              <p className="text-gray-400 text-xs">{stat.label}</p>
+            <div className="card flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-green-500 bg-green-100">
+                <Users size={18} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{counts.contratista}</p>
+                <p className="text-gray-400 text-xs">Contratistas</p>
+              </div>
             </div>
-          </div>
-        ))}
+            <div className="card flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-yellow-500 bg-yellow-100">
+                <Users size={18} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{counts.ayudante}</p>
+                <p className="text-gray-400 text-xs">Ayudantes</p>
+              </div>
+            </div>
+            <div className="card flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-purple-500 bg-purple-100">
+                <Users size={18} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{counts.god}</p>
+                <p className="text-gray-400 text-xs">GOD</p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="card flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-blue-500 bg-blue-100">
+                <Users size={18} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{counts.cliente}</p>
+                <p className="text-gray-400 text-xs">Mis Clientes</p>
+              </div>
+            </div>
+            <div className="card flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-yellow-500 bg-yellow-100">
+                <Users size={18} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-800">{counts.ayudante}</p>
+                <p className="text-gray-400 text-xs">Mis Ayudantes</p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Filters */}
@@ -147,6 +209,11 @@ export default async function UsersPage({
         <div className="card text-center py-16">
           <Users size={52} className="text-gray-200 mx-auto mb-3" />
           <p className="text-gray-500 font-medium">No hay usuarios</p>
+          <p className="text-gray-400 text-sm mt-1">
+            {profile?.role === 'contratista' 
+              ? 'Crea clientes y ayudantes para tus proyectos'
+              : 'Comienza creando usuarios para el sistema'}
+          </p>
           <Link href="/dashboard/users/new" className="btn btn-primary mt-4 inline-flex items-center gap-2">
             <Plus size={16} />
             Crear Usuario
@@ -158,19 +225,42 @@ export default async function UsersPage({
             const cfg = roleConfig[user.role]
             const isCurrentUser = user.id === session.user.id
             return (
-              <div key={user.id} className="card relative">
+              <Link 
+                key={user.id} 
+                href={`/dashboard/users/${user.id}/edit`}
+                className="card relative group cursor-pointer hover:shadow-xl transition-all hover:scale-[1.02] border-2 border-transparent hover:border-primary-300"
+              >
                 {isCurrentUser && (
                   <span className="absolute top-3 right-3 text-xs bg-primary-100 text-primary-600 px-2 py-0.5 rounded-full font-medium">
                     Tú
                   </span>
                 )}
 
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-secondary-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
-                    {user.full_name.charAt(0).toUpperCase()}
+                {/* Icono de editar (aparece en hover) */}
+                <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-7 h-7 bg-primary-500 rounded-full flex items-center justify-center shadow-lg">
+                    <Edit size={14} className="text-white" />
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-gray-800 truncate">{user.full_name}</p>
+                </div>
+
+                <div className="flex items-start gap-3 mb-3">
+                  {/* Avatar o Logo */}
+                  {user.avatar_url || user.logo_url ? (
+                    <img
+                      src={user.avatar_url || user.logo_url || ''}
+                      alt={user.full_name}
+                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-secondary-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                      {user.full_name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-gray-800 truncate group-hover:text-primary-600 transition-colors">
+                      {user.full_name}
+                    </p>
                     <span className={`badge ${cfg.badge} text-xs`}>{cfg.label}</span>
                   </div>
                 </div>
@@ -194,10 +284,26 @@ export default async function UsersPage({
                   )}
                 </div>
 
-                <p className="text-gray-300 text-xs mt-3">
-                  Creado {new Date(user.created_at).toLocaleDateString('es-ES')}
-                </p>
-              </div>
+                {/* Logo pequeño si existe (para contratistas) */}
+                {user.logo_url && !user.avatar_url && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <img
+                      src={user.logo_url}
+                      alt="Logo"
+                      className="h-6 object-contain opacity-50 group-hover:opacity-100 transition-opacity"
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                  <p className="text-gray-300 text-xs">
+                    Creado {new Date(user.created_at).toLocaleDateString('es-ES')}
+                  </p>
+                  <span className="text-xs text-primary-500 opacity-0 group-hover:opacity-100 transition-opacity font-medium">
+                    Click para editar →
+                  </span>
+                </div>
+              </Link>
             )
           })}
         </div>

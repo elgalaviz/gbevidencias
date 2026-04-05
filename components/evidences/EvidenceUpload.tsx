@@ -27,6 +27,65 @@ type FilePreview = {
   error: string | null
 }
 
+// Función para comprimir imágenes usando Canvas
+async function compressImage(file: File, maxWidth = 1920, quality = 0.8): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = (e) => {
+      const img = new Image()
+      img.src = e.target?.result as string
+      
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        let width = img.width
+        let height = img.height
+
+        // Redimensionar si es muy grande
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width
+          width = maxWidth
+        }
+
+        canvas.width = width
+        canvas.height = height
+
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          reject(new Error('No se pudo crear contexto canvas'))
+          return
+        }
+
+        ctx.drawImage(img, 0, 0, width, height)
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Error al comprimir imagen'))
+              return
+            }
+            
+            // Crear nuevo archivo con el blob comprimido
+            const compressedFile = new File(
+              [blob], 
+              file.name, 
+              { type: 'image/jpeg', lastModified: Date.now() }
+            )
+            
+            resolve(compressedFile)
+          },
+          'image/jpeg',
+          quality
+        )
+      }
+      
+      img.onerror = () => reject(new Error('Error al cargar imagen'))
+    }
+    
+    reader.onerror = () => reject(new Error('Error al leer archivo'))
+  })
+}
+
 export default function EvidenceUpload({ stageId, projectId, userId, onUploaded }: EvidenceUploadProps) {
   const supabase = createClient()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -67,16 +126,21 @@ export default function EvidenceUpload({ stageId, projectId, userId, onUploaded 
 
     for (let i = 0; i < files.length; i++) {
       const { file, caption } = files[i]
-      const ext = file.name.split('.').pop()
+      const ext = 'jpg' // Siempre guardamos como JPG después de comprimir
       const path = `${projectId}/${stageId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
       setFiles((prev) => prev.map((f, idx) => (idx === i ? { ...f, uploading: true, error: null } : f)))
 
       try {
+        // Comprimir imagen antes de subir
+        const compressedFile = await compressImage(file, 1920, 0.8)
+        
+        console.log(`Original: ${(file.size / 1024 / 1024).toFixed(2)}MB → Comprimida: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`)
+
         // Upload to storage
         const { error: storageError } = await supabase.storage
           .from('evidences')
-          .upload(path, file, { upsert: false })
+          .upload(path, compressedFile, { upsert: false })
 
         if (storageError) throw storageError
 
@@ -136,7 +200,7 @@ export default function EvidenceUpload({ stageId, projectId, userId, onUploaded 
         <p className="text-sm text-gray-500">
           <span className="text-primary-500 font-medium">Selecciona fotos</span> o arrastra aquí
         </p>
-        <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP</p>
+        <p className="text-xs text-gray-400 mt-1">JPG, PNG, WEBP • Se optimizarán automáticamente</p>
         <input
           ref={inputRef}
           type="file"
@@ -171,7 +235,7 @@ export default function EvidenceUpload({ stageId, projectId, userId, onUploaded 
                   <p className="text-red-500 text-xs mt-1">{fp.error}</p>
                 )}
                 {fp.uploading && (
-                  <p className="text-primary-500 text-xs mt-1 animate-pulse">Subiendo...</p>
+                  <p className="text-primary-500 text-xs mt-1 animate-pulse">Optimizando y subiendo...</p>
                 )}
               </div>
               {!fp.uploading && (

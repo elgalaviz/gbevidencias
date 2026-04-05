@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Plus, CheckCircle, XCircle, Clock, AlertCircle, ChevronRight, RefreshCw, Camera, ChevronDown } from 'lucide-react'
+import { Plus, CheckCircle, XCircle, Clock, AlertCircle, ChevronRight, RefreshCw, Camera, ChevronDown, FileText, Download } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import StageFormModal from './StageFormModal'
 import ApprovalModal from './ApprovalModal'
 import EvidenceUpload from '@/components/evidences/EvidenceUpload'
 import EvidenceGallery from '@/components/evidences/EvidenceGallery'
+import { generateStagePDF, generateProjectPDF } from '@/lib/pdf-generator'
 
 type StageStatus = 'pending' | 'progress' | 'completed' | 'approved' | 'rejected'
 type UserRole = 'god' | 'cliente' | 'contratista' | 'ayudante'
@@ -30,6 +31,14 @@ type Stage = {
 
 interface StagesSectionProps {
   projectId: string
+  projectName: string
+  projectDescription: string | null
+  projectAddress: string | null
+  clientName: string | null
+  contractorName: string | null
+  contractorCompany: string | null  // AGREGAR
+  contractorLogo: string | null     // AGREGAR
+  createdAt: string
   initialStages: Stage[]
   userRole: UserRole
   userId: string
@@ -56,13 +65,16 @@ const nextStatusLabel: Partial<Record<StageStatus, string>> = {
 }
 
 export default function StagesSection({
-  projectId, initialStages, userRole, userId, canManage, canApprove,
+  projectId, projectName, projectDescription, projectAddress, clientName, contractorName,
+  contractorCompany, contractorLogo, createdAt,  // AGREGAR ESTOS
+  initialStages, userRole, userId, canManage, canApprove,
 }: StagesSectionProps) {
   const supabase = createClient()
   const [stages, setStages] = useState<Stage[]>(initialStages)
   const [showForm, setShowForm] = useState(false)
   const [approval, setApproval] = useState<{ stageId: string; stageName: string; action: 'approve' | 'reject' } | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [generatingPDF, setGeneratingPDF] = useState<string | null>(null)
 
   // Evidencias por etapa: { [stageId]: Evidence[] | 'loading' }
   const [evidences, setEvidences] = useState<Record<string, Evidence[] | 'loading'>>({})
@@ -128,22 +140,106 @@ export default function StagesSection({
     }))
   }
 
+  // Generar PDF de una etapa
+  const handleGenerateStagePDF = async (stage: Stage) => {
+    setGeneratingPDF(stage.id)
+    
+    // Cargar evidencias si no están cargadas
+    await loadEvidences(stage.id)
+    
+    const stageEvs = evidences[stage.id]
+    const evidenceList = Array.isArray(stageEvs) ? stageEvs : []
+
+    try {
+      await generateStagePDF(
+  {
+    name: projectName,
+    description: projectDescription,
+    address: projectAddress,
+    clientName,
+    contractorName,
+    contractorCompany,  // AGREGAR
+    contractorLogo,     // AGREGAR
+    createdAt,
+  },
+        stage,
+        evidenceList
+      )
+    } catch (error) {
+      console.error('Error generando PDF:', error)
+      alert('Error al generar PDF. Por favor intenta de nuevo.')
+    } finally {
+      setGeneratingPDF(null)
+    }
+  }
+
+  // Generar PDF global del proyecto
+  const handleGenerateProjectPDF = async () => {
+    setGeneratingPDF('global')
+
+    // Cargar todas las evidencias
+    const allEvidencesData: Record<string, Evidence[]> = {}
+    
+    for (const stage of stages) {
+      await loadEvidences(stage.id)
+      const stageEvs = evidences[stage.id]
+      allEvidencesData[stage.id] = Array.isArray(stageEvs) ? stageEvs : []
+    }
+
+    try {
+      await generateProjectPDF(
+        {
+          name: projectName,
+    description: projectDescription,
+    address: projectAddress,
+    clientName,
+    contractorName,
+    contractorCompany,  // AGREGAR
+    contractorLogo,     // AGREGAR
+    createdAt,
+        },
+        stages,
+        allEvidencesData
+      )
+    } catch (error) {
+      console.error('Error generando PDF global:', error)
+      alert('Error al generar PDF. Por favor intenta de nuevo.')
+    } finally {
+      setGeneratingPDF(null)
+    }
+  }
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h2 className="text-xl font-bold text-white">
           Etapas
           <span className="ml-2 text-white/50 text-base font-normal">({stages.length})</span>
         </h2>
-        {canManage && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="btn btn-primary flex items-center gap-2 text-sm py-2"
-          >
-            <Plus size={16} />
-            Nueva Etapa
-          </button>
-        )}
+        
+        <div className="flex gap-2">
+          {/* Botón PDF Global */}
+          {stages.length > 0 && (
+            <button
+              onClick={handleGenerateProjectPDF}
+              disabled={generatingPDF === 'global'}
+              className="btn btn-secondary flex items-center gap-2 text-sm py-2"
+            >
+              <Download size={16} />
+              {generatingPDF === 'global' ? 'Generando...' : 'PDF Completo'}
+            </button>
+          )}
+
+          {canManage && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="btn btn-primary flex items-center gap-2 text-sm py-2"
+            >
+              <Plus size={16} />
+              Nueva Etapa
+            </button>
+          )}
+        </div>
       </div>
 
       {stages.length === 0 ? (
@@ -251,6 +347,15 @@ export default function StagesSection({
                       {showUpload === stage.id ? 'Cancelar' : 'Subir fotos'}
                     </button>
                   )}
+                  {/* Botón PDF por etapa */}
+                  <button
+                    onClick={() => handleGenerateStagePDF(stage)}
+                    disabled={generatingPDF === stage.id}
+                    className="btn btn-secondary text-xs py-1.5 flex items-center gap-1.5"
+                  >
+                    <FileText size={14} />
+                    {generatingPDF === stage.id ? 'Generando...' : 'PDF Etapa'}
+                  </button>
                 </div>
 
                 {/* Expanded: evidences */}

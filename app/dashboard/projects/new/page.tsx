@@ -21,7 +21,8 @@ export default async function NewProjectPage() {
     .single() as { data: { role: UserRole } | null }
 
   // Solo GOD puede crear proyectos
-  if (profile?.role !== 'god') redirect('/dashboard/projects')
+// Solo GOD y Contratistas pueden crear proyectos
+if (profile?.role !== 'god' && profile?.role !== 'contratista') redirect('/dashboard/projects')
 
   const { data: clients } = await supabase
     .from('profiles')
@@ -51,10 +52,11 @@ export default async function NewProjectPage() {
         <p className="text-gray-500 text-sm mb-6">Completa la información del proyecto</p>
 
         <ProjectForm
-          clients={clients ?? []}
-          contractors={contractors ?? []}
-          userId={session.user.id}
-        />
+  clients={clients ?? []}
+  contractors={contractors ?? []}
+  userId={session.user.id}
+  userRole={profile.role as 'god' | 'contratista'} // AGREGAR ESTA LÍNEA
+/>
       </div>
     </div>
   )

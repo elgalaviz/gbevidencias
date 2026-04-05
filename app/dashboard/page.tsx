@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Database, UserRole } from '@/types/database'
 import { FolderKanban, CheckCircle, Clock, AlertCircle } from 'lucide-react'
+import Link from 'next/link'
 
 export default async function DashboardPage() {
   const supabase = createServerComponentClient<Database>({ cookies })
@@ -128,6 +129,14 @@ export default async function DashboardPage() {
       {/* Projects list */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-bold text-white">Proyectos Recientes</h2>
+        {(profile?.role === 'god' || profile?.role === 'contratista') && (
+          <Link 
+            href="/dashboard/projects/new"
+            className="btn btn-primary"
+          >
+            + Nuevo Proyecto
+          </Link>
+        )}
       </div>
 
       {(!projects || projects.length === 0) ? (
@@ -144,46 +153,48 @@ export default async function DashboardPage() {
             const progress = totalStages > 0 ? Math.round((doneStages / totalStages) * 100) : 0
 
             return (
-              <div key={project.id} className="card group hover:scale-[1.01] transition-transform duration-200">
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-lg font-bold text-gray-800 leading-tight">{project.name}</h3>
-                  <span className={`badge ${statusColors[project.status ?? 'pending']} ml-2 shrink-0`}>
-                    {statusLabel[project.status ?? 'pending']}
-                  </span>
-                </div>
-
-                {project.description && (
-                  <p className="text-gray-500 text-sm mb-4 line-clamp-2">{project.description}</p>
-                )}
-
-                <div className="space-y-1 text-sm mb-4">
-                  {(project.client as any)?.full_name && (
-                    <p className="text-gray-600">
-                      <span className="font-semibold">Cliente:</span> {(project.client as any).full_name}
-                    </p>
-                  )}
-                  {(project.contractor as any)?.full_name && (
-                    <p className="text-gray-600">
-                      <span className="font-semibold">Contratista:</span> {(project.contractor as any).full_name}
-                    </p>
-                  )}
-                </div>
-
-                {totalStages > 0 && (
-                  <div>
-                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                      <span>Progreso</span>
-                      <span>{doneStages}/{totalStages} etapas</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
-                      <div
-                        className="bg-primary-500 h-2 rounded-full transition-all"
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
+              <Link key={project.id} href={`/dashboard/projects/${project.id}`}>
+                <div className="card group hover:scale-[1.01] transition-transform duration-200 cursor-pointer">
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-lg font-bold text-gray-800 leading-tight">{project.name}</h3>
+                    <span className={`badge ${statusColors[project.status ?? 'pending']} ml-2 shrink-0`}>
+                      {statusLabel[project.status ?? 'pending']}
+                    </span>
                   </div>
-                )}
-              </div>
+
+                  {project.description && (
+                    <p className="text-gray-500 text-sm mb-4 line-clamp-2">{project.description}</p>
+                  )}
+
+                  <div className="space-y-1 text-sm mb-4">
+                    {(project.client as any)?.full_name && (
+                      <p className="text-gray-600">
+                        <span className="font-semibold">Cliente:</span> {(project.client as any).full_name}
+                      </p>
+                    )}
+                    {(project.contractor as any)?.full_name && (
+                      <p className="text-gray-600">
+                        <span className="font-semibold">Contratista:</span> {(project.contractor as any).full_name}
+                      </p>
+                    )}
+                  </div>
+
+                  {totalStages > 0 && (
+                    <div>
+                      <div className="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>Progreso</span>
+                        <span>{doneStages}/{totalStages} etapas</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-2">
+                        <div
+                          className="bg-primary-500 h-2 rounded-full transition-all"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Link>
             )
           })}
         </div>

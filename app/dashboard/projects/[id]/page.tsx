@@ -23,7 +23,7 @@ type ProjectDetail = {
   status: string
   created_at: string
   client: { id: string; full_name: string; email: string } | null
-  contractor: { id: string; full_name: string; email: string } | null
+  contractor: { id: string; full_name: string; email: string; company_name: string | null; logo_url: string | null } | null
   stages: StageRow[]
 }
 
@@ -62,7 +62,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
     .select(`
       id, name, description, address, status, created_at,
       client:profiles!projects_client_id_fkey(id, full_name, email),
-      contractor:profiles!projects_contractor_id_fkey(id, full_name, email),
+      contractor:profiles!projects_contractor_id_fkey(id, full_name, email, company_name, logo_url),
       stages(id, name, description, status, order_index, rejection_reason)
     `)
     .eq('id', params.id)
@@ -184,6 +184,14 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
       {/* Stages */}
       <StagesSection
         projectId={project.id}
+        projectName={project.name}
+        projectDescription={project.description}
+        projectAddress={project.address}
+        clientName={(project.client as any)?.full_name || null}
+        contractorName={(project.contractor as any)?.full_name || null}
+        contractorCompany={(project.contractor as any)?.company_name || null}
+        contractorLogo={(project.contractor as any)?.logo_url || null}
+        createdAt={project.created_at}
         initialStages={stages}
         userRole={role}
         userId={session.user.id}
