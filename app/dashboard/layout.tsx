@@ -28,9 +28,8 @@ export default async function DashboardLayout({
       <Sidebar
         userRole={profile?.role ?? 'ayudante'}
         userName={profile?.full_name ?? session.user.email ?? ''}
-        userEmail={profile?.email ?? session.user.email ?? ''}
       />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto lg:ml-72">
         {children}
       </main>
     </div>

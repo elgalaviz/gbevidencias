@@ -223,11 +223,11 @@ export async function generateStagePDF(
   yPos += 40
 
   // Cuadros para firmas
-  doc.setDrawColor(200, 200, 200)
-  doc.setFillColor(250, 250, 250)
-  
+  doc.setDrawColor(150, 150, 150)
+  doc.setLineWidth(0.5)
+
   // Firma contratista
-  doc.rect(20, yPos, 70, 40, 'FD')
+  doc.rect(20, yPos, 70, 40, 'S')
   doc.setFontSize(10)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(60, 60, 60)
@@ -240,7 +240,7 @@ export async function generateStagePDF(
   }
 
   // Firma cliente
-  doc.rect(110, yPos, 70, 40, 'FD')
+  doc.rect(110, yPos, 70, 40, 'S')
   doc.setFontSize(10)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(60, 60, 60)
@@ -444,11 +444,13 @@ export async function generateProjectPDF(
   yPos += 40
 
   // Cuadros para firmas
-  doc.setDrawColor(200, 200, 200)
-  doc.setFillColor(250, 250, 250)
-  
-  doc.rect(20, yPos, 70, 40, 'FD')
+  doc.setDrawColor(150, 150, 150)
+  doc.setLineWidth(0.5)
+
+  doc.rect(20, yPos, 70, 40, 'S')
   doc.setFontSize(10)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(60, 60, 60)
   doc.text('Contratista', 55, yPos + 50, { align: 'center' })
   if (projectData.contractorName) {
     doc.setFontSize(9)
@@ -457,7 +459,7 @@ export async function generateProjectPDF(
     doc.text(projectData.contractorName, 55, yPos + 56, { align: 'center' })
   }
 
-  doc.rect(110, yPos, 70, 40, 'FD')
+  doc.rect(110, yPos, 70, 40, 'S')
   doc.setFontSize(10)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(60, 60, 60)
