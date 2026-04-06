@@ -1,7 +1,7 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { redirect, notFound } from 'next/navigation'
-import { Database, UserRole } from '@/types/database'
+import { Database, Profile, UserRole } from '@/types/database'
 import UserEditForm from '@/components/users/UserEditForm'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -20,7 +20,7 @@ export default async function EditUserPage({ params }: { params: { id: string } 
     .from('profiles')
     .select('*')
     .eq('id', session.user.id)
-    .single()
+    .single() as { data: Profile | null }
 
   if (!currentProfile) {
     redirect('/login')
@@ -31,7 +31,7 @@ export default async function EditUserPage({ params }: { params: { id: string } 
     .from('profiles')
     .select('*')
     .eq('id', params.id)
-    .single()
+    .single() as { data: Profile | null; error: unknown }
 
   if (error || !userToEdit) {
     notFound()
