@@ -2,8 +2,12 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, X, Building2, Trash2 } from 'lucide-react'
+import { Upload, X, Building2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import type { Database } from '@/types/database'
+
+type Profile = Database['public']['Tables']['profiles']['Row']
+type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
 
 const roles = [
   { value: 'god', label: '⚡ GOD', desc: 'Acceso total al sistema' },
@@ -13,7 +17,7 @@ const roles = [
 ]
 
 interface UserEditFormProps {
-  user: any
+  user: Profile
   allowedRoles: string[]
   currentUserId: string
   canChangeRole: boolean
@@ -93,7 +97,6 @@ export default function UserEditForm({ user, allowedRoles, currentUserId, canCha
 
   const removeLogo = async () => {
     if (user.logo_url) {
-      // Eliminar logo anterior de storage
       try {
         const path = user.logo_url.split('/logos/')[1]
         if (path) {
@@ -113,7 +116,6 @@ export default function UserEditForm({ user, allowedRoles, currentUserId, canCha
 
   const removeAvatar = async () => {
     if (user.avatar_url) {
-      // Eliminar avatar anterior de storage
       try {
         const path = user.avatar_url.split('/avatars/')[1]
         if (path) {
@@ -163,7 +165,6 @@ export default function UserEditForm({ user, allowedRoles, currentUserId, canCha
     setSuccess(false)
 
     try {
-      // Validaciones
       if (!formData.full_name) {
         throw new Error('El nombre completo es obligatorio')
       }
@@ -172,17 +173,15 @@ export default function UserEditForm({ user, allowedRoles, currentUserId, canCha
         throw new Error('El nombre de empresa es obligatorio para contratistas')
       }
 
-      // Preparar datos para actualizar
-      let updateData: any = {
+      const updateData: ProfileUpdate = {
         full_name: formData.full_name,
-        role: formData.role,
+        role: formData.role as any,
         phone: formData.phone || null,
         company_name: formData.role === 'contratista' ? formData.company_name : null,
       }
 
       // Si cambió el logo
       if (logoFile) {
-        // Eliminar logo anterior si existe
         if (user.logo_url) {
           try {
             const path = user.logo_url.split('/logos/')[1]
@@ -197,13 +196,11 @@ export default function UserEditForm({ user, allowedRoles, currentUserId, canCha
         const logoUrl = await uploadFile(logoFile, 'logos', user.id)
         updateData.logo_url = logoUrl
       } else if (!logoPreview && user.logo_url) {
-        // Si se removió el logo
         updateData.logo_url = null
       }
 
       // Si cambió el avatar
       if (avatarFile) {
-        // Eliminar avatar anterior si existe
         if (user.avatar_url) {
           try {
             const path = user.avatar_url.split('/avatars/')[1]
@@ -218,13 +215,11 @@ export default function UserEditForm({ user, allowedRoles, currentUserId, canCha
         const avatarUrl = await uploadFile(avatarFile, 'avatars', user.id)
         updateData.avatar_url = avatarUrl
       } else if (!avatarPreview && user.avatar_url) {
-        // Si se removió el avatar
         updateData.avatar_url = null
       }
 
-      // Actualizar en base de datos
-      const { error: updateError } = await supabase
-        .from('profiles')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: updateError } = await (supabase.from('profiles') as any)
         .update(updateData)
         .eq('id', user.id)
 
@@ -232,7 +227,6 @@ export default function UserEditForm({ user, allowedRoles, currentUserId, canCha
 
       setSuccess(true)
       
-      // Redirigir después de 1 segundo
       setTimeout(() => {
         router.push('/dashboard/users')
         router.refresh()
@@ -262,7 +256,6 @@ export default function UserEditForm({ user, allowedRoles, currentUserId, canCha
         </div>
       )}
 
-      {/* Selector de Rol */}
       {canChangeRole && filteredRoles.length > 1 && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -273,7 +266,7 @@ export default function UserEditForm({ user, allowedRoles, currentUserId, canCha
               <button
                 key={role.value}
                 type="button"
-                onClick={() => setFormData({ ...formData, role: role.value })}
+                onClick={() => setFormData({ ...formData, role: role.value as any })}
                 className={`p-4 rounded-lg border-2 text-left transition-all ${
                   formData.role === role.value
                     ? 'border-blue-500 bg-blue-50'
@@ -299,7 +292,6 @@ export default function UserEditForm({ user, allowedRoles, currentUserId, canCha
         </div>
       )}
 
-      {/* Datos Personales */}
       <div className="bg-gray-50 p-6 rounded-lg space-y-4">
         <h3 className="font-semibold text-gray-900 mb-4">Datos Personales</h3>
 
@@ -343,7 +335,6 @@ export default function UserEditForm({ user, allowedRoles, currentUserId, canCha
         </div>
       </div>
 
-      {/* Datos de Empresa (solo para contratistas) */}
       {isContractor && (
         <div className="bg-blue-50 p-6 rounded-lg space-y-4 border-2 border-blue-200">
           <div className="flex items-center gap-2 mb-4">
@@ -411,7 +402,6 @@ export default function UserEditForm({ user, allowedRoles, currentUserId, canCha
         </div>
       )}
 
-      {/* Foto de Ayudante */}
       {isHelper && (
         <div className="bg-green-50 p-6 rounded-lg space-y-4 border-2 border-green-200">
           <div className="flex items-center gap-2 mb-4">
@@ -465,7 +455,6 @@ export default function UserEditForm({ user, allowedRoles, currentUserId, canCha
         </div>
       )}
 
-      {/* Botones */}
       <div className="flex gap-3 pt-4">
         <button
           type="button"

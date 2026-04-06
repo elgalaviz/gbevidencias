@@ -4,9 +4,12 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Upload, X, Save, Building2, Phone, Globe, FileText } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import type { Database } from '@/types/database'
+
+type Profile = Database['public']['Tables']['profiles']['Row']
 
 interface CompanySettingsFormProps {
-  profile: any
+  profile: Profile
 }
 
 export default function CompanySettingsForm({ profile }: CompanySettingsFormProps) {
@@ -123,7 +126,9 @@ export default function CompanySettingsForm({ profile }: CompanySettingsFormProp
         throw new Error('El nombre de empresa es obligatorio')
       }
 
-      let updateData: any = {
+      type ProfileUpdate = Database['public']['Tables']['profiles']['Update']
+      
+      const updateData: ProfileUpdate = {
         company_name: formData.company_name,
         phone: formData.phone || null,
         company_address: formData.company_address || null,
@@ -142,8 +147,8 @@ export default function CompanySettingsForm({ profile }: CompanySettingsFormProp
       }
 
       // Actualizar en base de datos
-      const { error: updateError } = await supabase
-        .from('profiles')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: updateError } = await (supabase.from('profiles') as any)
         .update(updateData)
         .eq('id', profile.id)
 
