@@ -1,7 +1,7 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { Database } from '@/types/database'
+import { Database, Profile } from '@/types/database'
 import CompanySettingsForm from '@/components/settings/CompanySettingsForm'
 import { Building2 } from 'lucide-react'
 
@@ -19,7 +19,7 @@ export default async function CompanyPage() {
     .from('profiles')
     .select('*')
     .eq('id', session.user.id)
-    .single()
+    .single() as { data: Profile | null }
 
   if (!profile) {
     redirect('/login')
