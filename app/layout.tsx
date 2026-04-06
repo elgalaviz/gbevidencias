@@ -1,8 +1,9 @@
+// @ts-ignore
 import './globals.css'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'ProManager - Gestión de Proyectos',
+  title: 'Avanzzo - Gestión de Proyectos',
   description: 'Sistema profesional de gestión de proyectos para contratistas',
 }
 

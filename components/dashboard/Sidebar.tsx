@@ -114,7 +114,7 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-2">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            ProManager
+            Avanzzo
           </h1>
           <button
             onClick={() => setIsOpen(false)}
