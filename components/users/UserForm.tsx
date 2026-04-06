@@ -140,8 +140,8 @@ export default function UserForm({ allowedRoles, currentUserId }: UserFormProps)
         logoUrl = await uploadLogo(result.userId)
 
         // Actualizar el perfil con el logo URL
-        const { error: updateError } = await supabase
-          .from('profiles')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: updateError } = await (supabase.from('profiles') as any)
           .update({ logo_url: logoUrl })
           .eq('id', result.userId)
 
