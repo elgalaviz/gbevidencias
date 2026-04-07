@@ -39,16 +39,13 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-4">
             <Image
-              src="/avanzzo-ico.svg"
+              src="/avanzzo-ico2.svg"
               alt="Avanzzo Logo"
               width={80}
               height={80}
               priority
             />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Avanzzo
-          </h1>
           <p className="text-gray-600 mt-2">Gestión de proyectos y evidencias</p>
         </div>
 
