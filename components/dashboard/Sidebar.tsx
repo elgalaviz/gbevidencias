@@ -39,6 +39,7 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
       href: '/dashboard',
       icon: LayoutDashboard,
       roles: ['god', 'cliente', 'contratista', 'ayudante'],
+      exact: true, // ← AGREGADO: Solo activo en /dashboard exacto
     },
     {
       name: 'Proyectos',
@@ -77,7 +78,10 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
   ]
 
   const NavLink = ({ item }: { item: any }) => {
-    const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+    // ← MODIFICADO: Respetar flag exact
+    const isActive = item.exact 
+      ? pathname === item.href  // Matching exacto para Dashboard
+      : pathname === item.href || pathname.startsWith(item.href + '/')  // Matching normal para el resto
     
     return (
       <Link
