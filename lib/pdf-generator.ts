@@ -13,6 +13,14 @@ type Stage = {
   status: string
 }
 
+type StageLink = {
+  id: string
+  link_title: string
+  link_url: string
+  link_type: string | null
+  description: string | null
+}
+
 type ProjectData = {
   name: string
   description: string | null
@@ -103,82 +111,98 @@ async function drawHeader(
 export async function generateStagePDF(
   projectData: ProjectData,
   stage: Stage,
-  evidences: Evidence[]
+  evidences: Evidence[],
+  links: StageLink[] = []
 ) {
   const doc = new jsPDF()
   const companyName = projectData.contractorCompany || projectData.contractorName || 'Empresa Contratista'
   const projectName = projectData.name || 'Proyecto Sin Nombre'
-  
-  // Header en primera página
-  await drawHeader(doc, projectName, companyName, projectData.contractorLogo)
-  
-  let yPos = 55 // Empezar después del header
+  const stageName = stage.name || 'Etapa'
 
-  // Título de la etapa
+  // ── Portada ──────────────────────────────────────────────────────────────
+  doc.setFillColor(79, 70, 229)
+  doc.rect(0, 0, 210, 297, 'F')
+
+  doc.setFontSize(22)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(255, 255, 255)
+  doc.text(stageName, 105, 115, { align: 'center' })
+
+  doc.setFontSize(14)
+  doc.setFont('helvetica', 'normal')
+  doc.text(projectName, 105, 130, { align: 'center' })
+
+  doc.setFontSize(11)
+  doc.text(new Date().toLocaleDateString('es-MX', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  }), 105, 145, { align: 'center' })
+
+  doc.setFontSize(11)
+  doc.text(companyName, 105, 160, { align: 'center' })
+
+  // ── Página de información ─────────────────────────────────────────────────
+  doc.addPage()
+  await drawHeader(doc, projectName, companyName, projectData.contractorLogo)
+  let yPos = 60
+
+  // Título de etapa
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(40, 40, 40)
-  doc.text(`Etapa: ${stage.name || 'Sin nombre'}`, 20, yPos)
-  yPos += 12
+  doc.text(stageName, 20, yPos)
+  yPos += 10
 
-  // Información del proyecto
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(60, 60, 60)
-  
-  if (projectData.clientName) {
-    doc.text(`Cliente: ${projectData.clientName}`, 20, yPos)
-    yPos += 6
-  }
-  
-  if (projectData.contractorName) {
-    doc.text(`Contratista: ${projectData.contractorName}`, 20, yPos)
-    yPos += 6
-  }
-  
-  if (projectData.address) {
-    doc.text(`Dirección: ${projectData.address}`, 20, yPos)
-    yPos += 6
-  }
-  
-  doc.text(`Fecha de creación: ${new Date(projectData.createdAt).toLocaleDateString('es-MX', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })}`, 20, yPos)
-  yPos += 12
-
-  // Estado de la etapa con badge
+  // Estado
   doc.setFontSize(11)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
-  doc.text(`Estado: `, 20, yPos)
+  doc.text('Estado: ', 20, yPos)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(79, 70, 229)
-  doc.text(getStatusLabel(stage.status), 38, yPos)
+  doc.text(getStatusLabel(stage.status), 40, yPos)
   yPos += 10
 
+  // Descripción de la etapa
   if (stage.description) {
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(80, 80, 80)
     const lines = doc.splitTextToSize(stage.description, 170)
     doc.text(lines, 20, yPos)
-    yPos += lines.length * 6 + 10
+    yPos += lines.length * 6 + 8
   }
 
-  // Evidencias
+  // Info del proyecto
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(60, 60, 60)
+
+  if (projectData.clientName) {
+    doc.text(`Cliente: ${projectData.clientName}`, 20, yPos)
+    yPos += 6
+  }
+  if (projectData.contractorName) {
+    doc.text(`Contratista: ${projectData.contractorName}`, 20, yPos)
+    yPos += 6
+  }
+  if (projectData.address) {
+    doc.text(`Dirección: ${projectData.address}`, 20, yPos)
+    yPos += 6
+  }
+  doc.text(`Fecha de creación: ${new Date(projectData.createdAt).toLocaleDateString('es-MX', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  })}`, 20, yPos)
+  yPos += 16
+
+  // ── Evidencias fotográficas ───────────────────────────────────────────────
   if (evidences.length > 0) {
-    doc.setFontSize(12)
+    doc.setFontSize(13)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0, 0, 0)
     doc.text('Evidencias Fotográficas', 20, yPos)
     yPos += 10
 
-    for (let i = 0; i < evidences.length; i++) {
-      const ev = evidences[i]
-      
-      // Verificar si necesitamos una página nueva
+    for (const ev of evidences) {
       if (yPos > 240) {
         doc.addPage()
         await drawHeader(doc, projectName, companyName, projectData.contractorLogo)
@@ -187,11 +211,8 @@ export async function generateStagePDF(
 
       try {
         const imgData = await loadImageAsBase64(ev.image_url)
-        
-        // Agregar imagen
         doc.addImage(imgData, 'JPEG', 20, yPos, 80, 60)
-        
-        // Caption si existe
+
         if (ev.caption) {
           doc.setFontSize(9)
           doc.setFont('helvetica', 'italic')
@@ -199,10 +220,9 @@ export async function generateStagePDF(
           const captionLines = doc.splitTextToSize(ev.caption, 80)
           doc.text(captionLines, 20, yPos + 65)
         }
-        
+
         yPos += 80
-      } catch (error) {
-        console.error('Error cargando imagen:', error)
+      } catch {
         doc.setFontSize(9)
         doc.setTextColor(200, 0, 0)
         doc.text('Error al cargar imagen', 20, yPos)
@@ -211,18 +231,75 @@ export async function generateStagePDF(
     }
   }
 
-  // Página de firmas
+  // ── Documentos externos ───────────────────────────────────────────────────
+  if (links.length > 0) {
+    if (yPos > 220) {
+      doc.addPage()
+      await drawHeader(doc, projectName, companyName, projectData.contractorLogo)
+      yPos = 55
+    } else {
+      yPos += 6
+    }
+
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    doc.text('Documentos Externos', 20, yPos)
+    yPos += 10
+
+    const pageWidth = doc.internal.pageSize.getWidth()
+
+    links.forEach((link, idx) => {
+      if (yPos > 265) {
+        doc.addPage()
+        drawHeader(doc, projectName, companyName, projectData.contractorLogo)
+        yPos = 55
+      }
+
+      // Nombre del archivo
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(40, 40, 40)
+      doc.text(`${idx + 1}. ${link.link_title}`, 20, yPos)
+      yPos += 6
+
+      // URL clicable
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(37, 99, 235)
+      const urlLines = doc.splitTextToSize(link.link_url, pageWidth - 44)
+      doc.textWithLink(urlLines[0], 25, yPos, { url: link.link_url })
+      if (urlLines.length > 1) {
+        yPos += 5
+        doc.text(urlLines.slice(1), 25, yPos)
+        yPos += (urlLines.length - 1) * 5
+      }
+      yPos += 6
+
+      // Descripción opcional
+      if (link.description) {
+        doc.setFontSize(9)
+        doc.setTextColor(100, 100, 100)
+        const descLines = doc.splitTextToSize(link.description, pageWidth - 44)
+        doc.text(descLines, 25, yPos)
+        yPos += descLines.length * 5 + 2
+      }
+
+      yPos += 3
+    })
+  }
+
+  // ── Página de firmas ──────────────────────────────────────────────────────
   doc.addPage()
   await drawHeader(doc, projectName, companyName, projectData.contractorLogo)
   yPos = 70
-  
+
   doc.setFontSize(14)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(0, 0, 0)
   doc.text('Firmas de Conformidad', 105, yPos, { align: 'center' })
   yPos += 40
 
-  // Cuadros para firmas
   doc.setDrawColor(150, 150, 150)
   doc.setLineWidth(0.5)
 
@@ -253,7 +330,6 @@ export async function generateStagePDF(
   }
 
   // Descargar
-  const stageName = stage.name || 'etapa'
   const fileName = `${projectName.replace(/[^a-z0-9]/gi, '_')}_${stageName.replace(/[^a-z0-9]/gi, '_')}.pdf`
   doc.save(fileName)
 }

@@ -30,8 +30,10 @@ export default async function StagePage({
       project:projects (
         id,
         name,
+        address,
+        created_at,
         client:profiles!projects_client_id_fkey (full_name),
-        contractor:profiles!projects_contractor_id_fkey (full_name, company_name)
+        contractor:profiles!projects_contractor_id_fkey (full_name, company_name, logo_url)
       )
     `)
     .eq('id', params.stageId)
@@ -137,6 +139,14 @@ export default async function StagePage({
               stageId={params.stageId}
               stageName={stage.name}
               projectName={(stage.project as any)?.name || ''}
+              projectAddress={(stage.project as any)?.address || null}
+              clientName={(stage.project as any)?.client?.full_name || null}
+              contractorName={(stage.project as any)?.contractor?.full_name || null}
+              contractorCompany={(stage.project as any)?.contractor?.company_name || null}
+              contractorLogo={(stage.project as any)?.contractor?.logo_url || null}
+              projectCreatedAt={(stage.project as any)?.created_at || stage.created_at}
+              stageDescription={stage.description}
+              stageStatus={stage.status}
             />
             <Link
               href={`/dashboard/projects/${params.id}`}
