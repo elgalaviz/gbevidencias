@@ -78,10 +78,10 @@ export default async function DashboardPage() {
     <div className="p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-1">
+        <h1 className="text-3xl font-bold text-[#333] mb-1">
           Bienvenido, {profile?.full_name ?? 'Usuario'}
         </h1>
-        <p className="text-white/70 text-sm">
+        <p className="text-gray-500 text-sm">
           {new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
       </div>
@@ -128,7 +128,7 @@ export default async function DashboardPage() {
 
       {/* Projects list */}
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white">Proyectos Recientes</h2>
+        <h2 className="text-xl font-bold text-[#333]">Proyectos Recientes</h2>
         {(profile?.role === 'god' || profile?.role === 'contratista') && (
           <Link 
             href="/dashboard/projects/new"

@@ -97,8 +97,8 @@ export default async function UsersPage({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white">Usuarios</h1>
-          <p className="text-white/70 text-sm mt-1">{filtered?.length ?? 0} usuario(s)</p>
+          <h1 className="text-3xl font-bold text-[#333]">Usuarios</h1>
+          <p className="text-gray-500 text-sm mt-1">{filtered?.length ?? 0} usuario(s)</p>
         </div>
         <Link href="/dashboard/users/new" className="btn btn-primary flex items-center gap-2">
           <Plus size={18} />
@@ -172,9 +172,9 @@ export default async function UsersPage({
       </div>
 
       {/* Filters */}
-      <div className="bg-white/10 rounded-xl p-4 mb-6 flex flex-col sm:flex-row gap-3">
+      <div className="bg-white/60 rounded-xl p-4 mb-6 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <form>
@@ -183,7 +183,7 @@ export default async function UsersPage({
               name="q"
               defaultValue={searchParams.q}
               placeholder="Buscar por nombre, email, empresa..."
-              className="w-full pl-9 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-white/50 text-sm"
+              className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-primary-400 text-sm"
             />
           </form>
         </div>
@@ -194,8 +194,8 @@ export default async function UsersPage({
               href={`/dashboard/users?role=${tab.key}${searchParams.q ? `&q=${searchParams.q}` : ''}`}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                 (searchParams.role ?? 'all') === tab.key
-                  ? 'bg-white text-primary-600'
-                  : 'bg-white/10 text-white/80 hover:bg-white/20'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-100'
               }`}
             >
               {tab.label}

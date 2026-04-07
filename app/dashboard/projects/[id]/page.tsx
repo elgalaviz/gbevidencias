@@ -108,7 +108,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
       {/* Back */}
       <Link
         href="/dashboard/projects"
-        className="inline-flex items-center gap-2 text-white/70 hover:text-white mb-6 transition-colors text-sm"
+        className="inline-flex items-center gap-2 text-gray-500 hover:text-[#333] mb-6 transition-colors text-sm"
       >
         <ChevronLeft size={18} />
         Volver a Proyectos

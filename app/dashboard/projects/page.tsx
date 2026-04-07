@@ -103,8 +103,8 @@ export default async function ProjectsPage({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-white">Proyectos</h1>
-          <p className="text-white/70 text-sm mt-1">{filtered?.length ?? 0} proyecto(s)</p>
+          <h1 className="text-3xl font-bold text-[#333]">Proyectos</h1>
+          <p className="text-gray-500 text-sm mt-1">{filtered?.length ?? 0} proyecto(s)</p>
         </div>
         {role === 'god' && (
           <Link href="/dashboard/projects/new" className="btn btn-primary flex items-center gap-2">
@@ -115,17 +115,17 @@ export default async function ProjectsPage({
       </div>
 
       {/* Filters */}
-      <div className="bg-white/10 rounded-xl p-4 mb-6 flex flex-col sm:flex-row gap-3">
+      <div className="bg-white/60 rounded-xl p-4 mb-6 flex flex-col sm:flex-row gap-3">
         {/* Search */}
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <form>
             <input
               type="text"
               name="q"
               defaultValue={searchParams.q}
               placeholder="Buscar por nombre, cliente..."
-              className="w-full pl-9 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-white/50 text-sm"
+              className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:border-primary-400 text-sm"
             />
           </form>
         </div>
@@ -138,8 +138,8 @@ export default async function ProjectsPage({
               href={`/dashboard/projects?status=${tab.key}${searchParams.q ? `&q=${searchParams.q}` : ''}`}
               className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                 (searchParams.status ?? 'all') === tab.key
-                  ? 'bg-white text-primary-600'
-                  : 'bg-white/10 text-white/80 hover:bg-white/20'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-100'
               }`}
             >
               {tab.label}
