@@ -37,7 +37,7 @@ async function loadImageAsBase64(url: string): Promise<string> {
   try {
     const response = await fetch(url)
     const blob = await response.blob()
-    
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onloadend = () => resolve(reader.result as string)
@@ -48,6 +48,34 @@ async function loadImageAsBase64(url: string): Promise<string> {
     console.error('Error cargando imagen:', error)
     throw error
   }
+}
+
+// Obtiene dimensiones naturales de una imagen base64
+function getImageDimensions(base64: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight })
+    img.onerror = () => resolve({ width: 1, height: 1 })
+    img.src = base64
+  })
+}
+
+// Calcula ancho/alto para el PDF manteniendo aspect ratio con altura fija
+async function calcImageSize(
+  base64: string,
+  fixedHeight: number,
+  maxWidth: number
+): Promise<{ w: number; h: number }> {
+  const { width, height } = await getImageDimensions(base64)
+  if (height === 0) return { w: fixedHeight, h: fixedHeight }
+  const ratio = width / height
+  let w = fixedHeight * ratio
+  let h = fixedHeight
+  if (w > maxWidth) {
+    w = maxWidth
+    h = maxWidth / ratio
+  }
+  return { w, h }
 }
 
 // Función para dibujar header profesional en cada página
@@ -211,17 +239,18 @@ export async function generateStagePDF(
 
       try {
         const imgData = await loadImageAsBase64(ev.image_url)
-        doc.addImage(imgData, 'JPEG', 20, yPos, 80, 60)
+        const { w, h } = await calcImageSize(imgData, 60, 170)
+        doc.addImage(imgData, 'JPEG', 20, yPos, w, h)
 
         if (ev.caption) {
           doc.setFontSize(9)
           doc.setFont('helvetica', 'italic')
           doc.setTextColor(100, 100, 100)
-          const captionLines = doc.splitTextToSize(ev.caption, 80)
-          doc.text(captionLines, 20, yPos + 65)
+          const captionLines = doc.splitTextToSize(ev.caption, w)
+          doc.text(captionLines, 20, yPos + h + 5)
         }
 
-        yPos += 80
+        yPos += h + (ev.caption ? 14 : 8)
       } catch {
         doc.setFontSize(9)
         doc.setTextColor(200, 0, 0)
@@ -490,17 +519,18 @@ export async function generateProjectPDF(
 
         try {
           const imgData = await loadImageAsBase64(ev.image_url)
-          doc.addImage(imgData, 'JPEG', 20, yPos, 80, 60)
-          
+          const { w, h } = await calcImageSize(imgData, 60, 170)
+          doc.addImage(imgData, 'JPEG', 20, yPos, w, h)
+
           if (ev.caption) {
             doc.setFontSize(9)
             doc.setFont('helvetica', 'italic')
             doc.setTextColor(100, 100, 100)
-            const captionLines = doc.splitTextToSize(ev.caption, 80)
-            doc.text(captionLines, 20, yPos + 65)
+            const captionLines = doc.splitTextToSize(ev.caption, w)
+            doc.text(captionLines, 20, yPos + h + 5)
           }
-          
-          yPos += 80
+
+          yPos += h + (ev.caption ? 14 : 8)
         } catch (error) {
           console.error('Error cargando imagen:', error)
         }
