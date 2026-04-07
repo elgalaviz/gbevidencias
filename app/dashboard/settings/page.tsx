@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import type { Database } from '@/types/database'
 
+type UserRole = 'god' | 'contratista' | 'cliente' | 'ayudante'
+
 export default async function SettingsPage() {
   const supabase = createServerComponentClient<Database>({ cookies })
   
@@ -22,7 +24,10 @@ export default async function SettingsPage() {
     redirect('/login')
   }
 
-  if (profile.role !== 'god') {
+  // Cast explícito del role
+  const userRole = profile.role as UserRole
+
+  if (userRole !== 'god') {
     redirect('/dashboard')
   }
 
