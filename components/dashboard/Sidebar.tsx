@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   FolderKanban,
   Users,
-  Settings,
   Building2,
   LogOut,
   Menu,
@@ -68,12 +67,7 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
       roles: ['contratista'],
       badge: 'Nuevo',
     },
-    {
-      name: 'Configuración',
-      href: '/dashboard/settings',
-      icon: Settings,
-      roles: ['god'],
-    },
+    // ← QUITADO: Configuración para GOD
   ]
 
   // Filtrar navegación según rol
