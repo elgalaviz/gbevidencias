@@ -430,7 +430,8 @@ export async function generateStagePDF(
 export async function generateProjectPDF(
   projectData: ProjectData,
   stages: Stage[],
-  allEvidences: Record<string, Evidence[]>
+  allEvidences: Record<string, Evidence[]>,
+  allLinks: Record<string, StageLink[]> = {}
 ) {
   const doc = new jsPDF()
   const companyName = projectData.contractorCompany || projectData.contractorName || 'Empresa Contratista'
@@ -622,6 +623,46 @@ export async function generateProjectPDF(
           console.error('Error cargando imagen:', error)
         }
       }
+    }
+
+    // Documentos externos de la etapa
+    const stageLinks = allLinks[stage.id] ?? []
+    if (stageLinks.length > 0) {
+      if (yPos > 240) {
+        doc.addPage()
+        await drawHeader(doc, projectName, companyName, projectData.contractorLogo)
+        yPos = 32
+      } else {
+        yPos += 4
+      }
+      yPos = drawSectionTitle(doc, 'Documentos Externos', 20, yPos)
+      const pw = doc.internal.pageSize.getWidth()
+      stageLinks.forEach((link, idx) => {
+        if (yPos > 265) {
+          doc.addPage()
+          drawHeader(doc, projectName, companyName, projectData.contractorLogo)
+          yPos = 32
+        }
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(40, 40, 40)
+        doc.text(`${idx + 1}. ${link.link_title}`, 20, yPos)
+        yPos += 6
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(37, 99, 235)
+        const urlLines = doc.splitTextToSize(link.link_url, pw - 44)
+        doc.textWithLink(urlLines[0], 25, yPos, { url: link.link_url })
+        yPos += 6
+        if (link.description) {
+          doc.setFontSize(9)
+          doc.setTextColor(100, 100, 100)
+          const descLines = doc.splitTextToSize(link.description, pw - 44)
+          doc.text(descLines, 25, yPos)
+          yPos += descLines.length * 5 + 2
+        }
+        yPos += 3
+      })
     }
   }
 

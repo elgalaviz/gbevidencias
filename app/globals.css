@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-gradient-to-br from-primary-500 via-primary-600 to-secondary-500 min-h-screen text-gray-900;
+    @apply bg-gradient-to-br from-slate-100 via-indigo-100 to-purple-100 min-h-screen text-gray-900;
   }
 }
 

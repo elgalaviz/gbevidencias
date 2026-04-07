@@ -84,14 +84,21 @@ export default function StagesSection({
 
     try {
       const allEvidencesData: Record<string, any[]> = {}
-      
+      const allLinksData: Record<string, any[]> = {}
+
       for (const stage of stages) {
-        const { data } = await (supabase.from('evidences') as any)
-          .select('id, image_url, image_path, caption, uploaded_by')
-          .eq('stage_id', stage.id)
-          .order('created_at', { ascending: true })
-        
-        allEvidencesData[stage.id] = data ?? []
+        const [{ data: evData }, { data: linkData }] = await Promise.all([
+          (supabase.from('evidences') as any)
+            .select('id, image_url, image_path, caption, uploaded_by')
+            .eq('stage_id', stage.id)
+            .order('created_at', { ascending: true }),
+          (supabase.from('stage_links') as any)
+            .select('id, link_title, link_url, link_type, description')
+            .eq('stage_id', stage.id)
+            .order('created_at', { ascending: false }),
+        ])
+        allEvidencesData[stage.id] = evData ?? []
+        allLinksData[stage.id] = linkData ?? []
       }
 
       await generateProjectPDF(
@@ -106,7 +113,8 @@ export default function StagesSection({
           createdAt,
         },
         stages,
-        allEvidencesData
+        allEvidencesData,
+        allLinksData
       )
     } catch (error) {
       console.error('Error generando PDF global:', error)
