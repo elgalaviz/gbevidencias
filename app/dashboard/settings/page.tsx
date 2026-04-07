@@ -1,199 +1,129 @@
-'use client'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
+import type { Database } from '@/types/database'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
-import {
-  LayoutDashboard,
-  FolderKanban,
-  Users,
-  Settings,
-  Building2,
-  LogOut,
-  Menu,
-  X,
-  ChevronRight,
-} from 'lucide-react'
-
-interface SidebarProps {
-  userRole: 'god' | 'cliente' | 'contratista' | 'ayudante'
-  userName: string
-}
-
-export default function Sidebar({ userRole, userName }: SidebarProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const pathname = usePathname()
-  const router = useRouter()
-  const supabase = createClient()
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
+export default async function SettingsPage() {
+  const supabase = createServerComponentClient<Database>({ cookies })
+  
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (!session) {
+    redirect('/login')
   }
 
-  // Navegación base (todos los roles)
-  const baseNavigation = [
-    {
-      name: 'Dashboard',
-      href: '/dashboard',
-      icon: LayoutDashboard,
-      roles: ['god', 'cliente', 'contratista', 'ayudante'],
-    },
-    {
-      name: 'Proyectos',
-      href: '/dashboard/projects',
-      icon: FolderKanban,
-      roles: ['god', 'cliente', 'contratista', 'ayudante'],
-    },
-  ]
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', session.user.id)
+    .single()
 
-  // Navegación de gestión (solo GOD y Contratistas)
-  const managementNavigation = [
-    {
-      name: 'Usuarios',
-      href: '/dashboard/users',
-      icon: Users,
-      roles: ['god', 'contratista'],
-    },
-  ]
-
-  // Navegación de configuración (según rol)
-  const settingsNavigation = [
-    {
-      name: 'Tu Empresa',
-      href: '/dashboard/company',
-      icon: Building2,
-      roles: ['contratista'],
-      badge: 'Nuevo',
-    },
-    {
-      name: 'Configuración',
-      href: '/dashboard/settings', // ← CAMBIO: antes era /dashboard/configuration
-      icon: Settings,
-      roles: ['god'],
-    },
-  ]
-
-  // Filtrar navegación según rol
-  const navigation = [
-    ...baseNavigation.filter(item => item.roles.includes(userRole)),
-    ...managementNavigation.filter(item => item.roles.includes(userRole)),
-    ...settingsNavigation.filter(item => item.roles.includes(userRole)),
-  ]
-
-  const NavLink = ({ item }: { item: any }) => {
-    const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-    
-    return (
-      <Link
-        href={item.href}
-        onClick={() => setIsOpen(false)}
-        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all group ${
-          isActive
-            ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-            : 'text-gray-700 hover:bg-gray-100'
-        }`}
-      >
-        <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-blue-600'}`} />
-        <span className="font-medium flex-1">{item.name}</span>
-        {item.badge && (
-          <span className="text-xs px-2 py-1 bg-green-500 text-white rounded-full">
-            {item.badge}
-          </span>
-        )}
-        {isActive && <ChevronRight className="w-4 h-4" />}
-      </Link>
-    )
+  if (!profile) {
+    redirect('/login')
   }
 
-  const SidebarContent = () => (
-    <>
-      {/* Header */}
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Avanzzo
-          </h1>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="lg:hidden text-gray-500 hover:text-gray-700"
-          >
-            <X className="w-6 h-6" />
-          </button>
+  if (profile.role !== 'god') {
+    redirect('/dashboard')
+  }
+
+  return (
+    <div className="p-8 max-w-7xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Configuración del Sistema</h1>
+        <p className="mt-2 text-sm text-gray-600">
+          Panel de administración exclusivo para usuarios GOD
+        </p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Card: Configuración General */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-purple-100 rounded-lg">
+              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Configuración General</h2>
+              <p className="text-sm text-gray-500">Ajustes del sistema</p>
+            </div>
+          </div>
+          <p className="text-gray-600 text-sm">
+            Próximamente: Configuración de roles, permisos, y ajustes globales de la aplicación.
+          </p>
         </div>
-        <div className="flex flex-col gap-1">
-          <p className="text-sm text-gray-600">{userName}</p>
-          <div className="flex items-center gap-2">
-            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-              userRole === 'god' ? 'bg-purple-100 text-purple-700' :
-              userRole === 'contratista' ? 'bg-blue-100 text-blue-700' :
-              userRole === 'cliente' ? 'bg-green-100 text-green-700' :
-              'bg-gray-100 text-gray-700'
-            }`}>
-              {userRole === 'god' ? '⚡ GOD' :
-               userRole === 'contratista' ? '👷 Contratista' :
-               userRole === 'cliente' ? '🏢 Cliente' :
-               '🔧 Ayudante'}
-            </span>
+
+        {/* Card: Gestión de Base de Datos */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Base de Datos</h2>
+              <p className="text-sm text-gray-500">Gestión y mantenimiento</p>
+            </div>
+          </div>
+          <p className="text-gray-600 text-sm">
+            Próximamente: Backups, migraciones, y herramientas de administración de BD.
+          </p>
+        </div>
+
+        {/* Card: Logs del Sistema */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-green-100 rounded-lg">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Logs de Actividad</h2>
+              <p className="text-sm text-gray-500">Historial del sistema</p>
+            </div>
+          </div>
+          <p className="text-gray-600 text-sm">
+            Próximamente: Visualización de activity_logs, auditoría de acciones de usuarios.
+          </p>
+        </div>
+
+        {/* Card: Seguridad */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-red-100 rounded-lg">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Seguridad</h2>
+              <p className="text-sm text-gray-500">Políticas y accesos</p>
+            </div>
+          </div>
+          <p className="text-gray-600 text-sm">
+            Próximamente: Row Level Security (RLS), gestión de permisos, y políticas de acceso.
+          </p>
+        </div>
+      </div>
+
+      {/* Info adicional */}
+      <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div className="flex gap-3">
+          <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <h3 className="text-sm font-medium text-yellow-800">Funcionalidades en desarrollo</h3>
+            <p className="mt-1 text-sm text-yellow-700">
+              Esta página está en construcción. Las funcionalidades de configuración avanzada estarán disponibles próximamente.
+            </p>
           </div>
         </div>
       </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {navigation.map((item) => (
-          <NavLink key={item.name} item={item} />
-        ))}
-      </nav>
-
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-        >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">Cerrar Sesión</span>
-        </button>
-      </div>
-    </>
-  )
-
-  return (
-    <>
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-40 p-2 bg-white rounded-lg shadow-lg text-gray-700 hover:bg-gray-100"
-      >
-        <Menu className="w-6 h-6" />
-      </button>
-
-      {/* Mobile Overlay */}
-      {isOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-
-      {/* Sidebar - Mobile */}
-      <aside
-        className={`lg:hidden fixed top-0 left-0 z-50 h-full w-72 bg-white shadow-xl transform transition-transform duration-300 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          <SidebarContent />
-        </div>
-      </aside>
-
-      {/* Sidebar - Desktop */}
-      <aside className="hidden lg:flex lg:flex-col h-screen w-72 bg-white border-r border-gray-200 fixed left-0 top-0">
-        <SidebarContent />
-      </aside>
-    </>
+    </div>
   )
 }
