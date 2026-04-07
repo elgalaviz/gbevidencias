@@ -217,6 +217,41 @@ export interface Database {
           created_at?: string
         }
       }
+      stage_links: {
+        Row: {
+          id: string
+          stage_id: string
+          link_title: string
+          link_url: string
+          link_type: string | null
+          description: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          stage_id: string
+          link_title: string
+          link_url: string
+          link_type?: string | null
+          description?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          stage_id?: string
+          link_title?: string
+          link_url?: string
+          link_type?: string | null
+          description?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
