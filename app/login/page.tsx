@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -37,20 +38,13 @@ export default function LoginPage() {
         {/* Logo y título */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-4">
-            <svg width="80" height="80" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M100 20L180 60V140L100 180L20 140V60L100 20Z" fill="url(#grad1)" stroke="url(#grad2)" strokeWidth="4"/>
-              <text x="100" y="120" fontFamily="Arial, sans-serif" fontSize="80" fontWeight="bold" fill="white" textAnchor="middle">A</text>
-              <defs>
-                <linearGradient id="grad1" x1="20" y1="20" x2="180" y2="180" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#2563eb"/>
-                  <stop offset="100%" stopColor="#9333ea"/>
-                </linearGradient>
-                <linearGradient id="grad2" x1="20" y1="20" x2="180" y2="180" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#1d4ed8"/>
-                  <stop offset="100%" stopColor="#7c3aed"/>
-                </linearGradient>
-              </defs>
-            </svg>
+            <Image
+              src="/avanzzo-ico.svg"
+              alt="Avanzzo Logo"
+              width={80}
+              height={80}
+              priority
+            />
           </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Avanzzo
@@ -141,7 +135,7 @@ export default function LoginPage() {
         {/* Footer de la página */}
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500">
-            © 2026 Avanzzo. Todos los derechos reservados.
+            © 2026 Avanzzo MX. Todos los derechos reservados. 
           </p>
         </div>
       </div>
