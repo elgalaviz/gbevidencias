@@ -78,7 +78,7 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
   ]
 
   const NavLink = ({ item }: { item: any }) => {
-    const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+    const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'))
     
     return (
       <Link
