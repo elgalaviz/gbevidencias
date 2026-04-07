@@ -78,7 +78,7 @@ async function calcImageSize(
   return { w, h }
 }
 
-// Función para dibujar header profesional en cada página
+// Función para dibujar header en cada página (fondo morado, texto blanco, logo en círculo)
 async function drawHeader(
   doc: jsPDF,
   projectName: string,
@@ -86,53 +86,56 @@ async function drawHeader(
   logoUrl?: string | null
 ) {
   const pageWidth = doc.internal.pageSize.getWidth()
-  
-  // Rectángulo del header con sombra sutil
-  doc.setDrawColor(220, 220, 220)
-  doc.setLineWidth(0.5)
-  doc.setFillColor(252, 252, 254)
-  doc.rect(10, 10, pageWidth - 20, 35, 'FD')
-  
-  // Nombre de empresa/contratista (izquierda)
-  doc.setFontSize(13)
+  const headerH = 22
+
+  // Fondo morado sólido
+  doc.setFillColor(79, 70, 229)
+  doc.setDrawColor(79, 70, 229)
+  doc.rect(0, 0, pageWidth, headerH, 'F')
+
+  // Nombre empresa (izquierda, blanco)
+  doc.setFontSize(11)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(79, 70, 229) // primary color
-  doc.text(companyName || 'Contratista', 15, 22)
-  
-  // Logo (derecha) - si existe
+  doc.setTextColor(255, 255, 255)
+  doc.text(companyName || 'Contratista', 12, 9)
+
+  // Nombre proyecto (segunda línea, blanco semitransparente)
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(210, 210, 255)
+  const maxW = logoUrl ? pageWidth - 55 : pageWidth - 20
+  const truncated = doc.splitTextToSize(projectName, maxW)[0]
+  doc.text(truncated, 12, 17)
+
+  // Fecha (derecha, blanco)
+  const fecha = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' })
+  doc.setFontSize(8)
+  doc.setTextColor(210, 210, 255)
+  const fechaX = logoUrl ? pageWidth - 42 : pageWidth - 12
+  doc.text(fecha, fechaX, 9, { align: 'right' })
+
+  // Logo en círculo blanco (derecha)
   if (logoUrl) {
     try {
       const logoData = await loadImageAsBase64(logoUrl)
-      doc.addImage(logoData, 'PNG', pageWidth - 45, 12, 30, 20, undefined, 'FAST')
-    } catch (error) {
-      console.log('Logo no disponible, continuando sin logo')
+      const r = 9
+      const cx = pageWidth - 15
+      const cy = headerH / 2
+      // Círculo blanco de fondo
+      doc.setFillColor(255, 255, 255)
+      doc.setDrawColor(255, 255, 255)
+      doc.circle(cx, cy, r, 'F')
+      // Logo centrado dentro del círculo
+      const imgSize = r * 1.4
+      doc.addImage(logoData, 'PNG', cx - imgSize / 2, cy - imgSize / 2, imgSize, imgSize, undefined, 'FAST')
+    } catch {
+      // Sin logo, sin problema
     }
   }
-  
-  // Línea separadora
-  doc.setDrawColor(200, 200, 220)
-  doc.setLineWidth(0.3)
-  doc.line(15, 28, pageWidth - 15, 28)
-  
-  // Nombre del proyecto (abajo izquierda)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(80, 80, 80)
-  const maxProjectNameWidth = pageWidth - 80
-  const truncatedProjectName = doc.splitTextToSize(projectName, maxProjectNameWidth)[0]
-  doc.text(truncatedProjectName, 15, 37)
-  
-  // Fecha (abajo derecha)
-  const fecha = new Date().toLocaleDateString('es-MX', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-  doc.setTextColor(100, 100, 100)
-  doc.text(fecha, pageWidth - 15, 37, { align: 'right' })
-  
+
   // Resetear estilos
   doc.setFont('helvetica', 'normal')
+  doc.setTextColor(0, 0, 0)
 }
 
 // Generar PDF de una etapa específica
@@ -147,31 +150,72 @@ export async function generateStagePDF(
   const projectName = projectData.name || 'Proyecto Sin Nombre'
   const stageName = stage.name || 'Etapa'
 
-  // ── Portada ──────────────────────────────────────────────────────────────
+  // ── Portada (fondo blanco, acentos en color) ─────────────────────────────
+  const coverWidth = 210
+  const coverHeight = 297
+
+  // Barra superior morada
   doc.setFillColor(79, 70, 229)
-  doc.rect(0, 0, 210, 297, 'F')
+  doc.rect(0, 0, coverWidth, 18, 'F')
 
-  doc.setFontSize(22)
+  // Barra inferior morada
+  doc.rect(0, coverHeight - 18, coverWidth, 18, 'F')
+
+  // Línea de acento vertical izquierda
+  doc.setFillColor(120, 113, 240)
+  doc.rect(0, 18, 6, coverHeight - 36, 'F')
+
+  // Logo centrado (si existe)
+  if (projectData.contractorLogo) {
+    try {
+      const logoData = await loadImageAsBase64(projectData.contractorLogo)
+      const logoSize = 28
+      doc.addImage(logoData, 'PNG', (coverWidth - logoSize) / 2, 80, logoSize, logoSize, undefined, 'FAST')
+    } catch { /* sin logo */ }
+  }
+
+  // Nombre de empresa
+  doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(255, 255, 255)
-  doc.text(stageName, 105, 115, { align: 'center' })
+  doc.setTextColor(79, 70, 229)
+  doc.text(companyName, coverWidth / 2, 120, { align: 'center' })
 
-  doc.setFontSize(14)
+  // Separador
+  doc.setDrawColor(79, 70, 229)
+  doc.setLineWidth(0.5)
+  doc.line(40, 128, coverWidth - 40, 128)
+
+  // Nombre de etapa (título principal)
+  doc.setFontSize(24)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(30, 30, 40)
+  const stageLines = doc.splitTextToSize(stageName, coverWidth - 40)
+  doc.text(stageLines, coverWidth / 2, 145, { align: 'center' })
+
+  // Nombre del proyecto
+  doc.setFontSize(13)
   doc.setFont('helvetica', 'normal')
-  doc.text(projectName, 105, 130, { align: 'center' })
+  doc.setTextColor(79, 70, 229)
+  const projLines = doc.splitTextToSize(projectName, coverWidth - 40)
+  doc.text(projLines, coverWidth / 2, 165, { align: 'center' })
 
-  doc.setFontSize(11)
+  // Fecha
+  doc.setFontSize(10)
+  doc.setTextColor(120, 120, 130)
   doc.text(new Date().toLocaleDateString('es-MX', {
     year: 'numeric', month: 'long', day: 'numeric'
-  }), 105, 145, { align: 'center' })
+  }), coverWidth / 2, 180, { align: 'center' })
 
-  doc.setFontSize(11)
-  doc.text(companyName, 105, 160, { align: 'center' })
+  // Texto en barra inferior blanco
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(255, 255, 255)
+  doc.text(companyName, coverWidth / 2, coverHeight - 7, { align: 'center' })
 
   // ── Página de información ─────────────────────────────────────────────────
   doc.addPage()
   await drawHeader(doc, projectName, companyName, projectData.contractorLogo)
-  let yPos = 60
+  let yPos = 32
 
   // Título de etapa
   doc.setFontSize(16)
@@ -234,7 +278,7 @@ export async function generateStagePDF(
       if (yPos > 240) {
         doc.addPage()
         await drawHeader(doc, projectName, companyName, projectData.contractorLogo)
-        yPos = 55
+        yPos = 32
       }
 
       try {
@@ -265,7 +309,7 @@ export async function generateStagePDF(
     if (yPos > 220) {
       doc.addPage()
       await drawHeader(doc, projectName, companyName, projectData.contractorLogo)
-      yPos = 55
+      yPos = 32
     } else {
       yPos += 6
     }
@@ -282,7 +326,7 @@ export async function generateStagePDF(
       if (yPos > 265) {
         doc.addPage()
         drawHeader(doc, projectName, companyName, projectData.contractorLogo)
-        yPos = 55
+        yPos = 32
       }
 
       // Nombre del archivo
@@ -373,33 +417,73 @@ export async function generateProjectPDF(
   const companyName = projectData.contractorCompany || projectData.contractorName || 'Empresa Contratista'
   const projectName = projectData.name || 'Proyecto Sin Nombre'
   
-  // Portada
+  // ── Portada (fondo blanco, acentos en color) ─────────────────────────────
+  const coverWidth = 210
+  const coverHeight = 297
+
+  // Barra superior morada
   doc.setFillColor(79, 70, 229)
-  doc.rect(0, 0, 210, 297, 'F')
-  
-  doc.setFontSize(24)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(255, 255, 255)
-  doc.text(projectName, 105, 120, { align: 'center' })
-  
-  doc.setFontSize(16)
-  doc.setFont('helvetica', 'normal')
-  doc.text('Reporte de Proyecto', 105, 135, { align: 'center' })
-  
+  doc.rect(0, 0, coverWidth, 18, 'F')
+
+  // Barra inferior morada
+  doc.rect(0, coverHeight - 18, coverWidth, 18, 'F')
+
+  // Línea de acento vertical izquierda
+  doc.setFillColor(120, 113, 240)
+  doc.rect(0, 18, 6, coverHeight - 36, 'F')
+
+  // Logo centrado (si existe)
+  if (projectData.contractorLogo) {
+    try {
+      const logoData = await loadImageAsBase64(projectData.contractorLogo)
+      const logoSize = 28
+      doc.addImage(logoData, 'PNG', (coverWidth - logoSize) / 2, 80, logoSize, logoSize, undefined, 'FAST')
+    } catch { /* sin logo */ }
+  }
+
+  // Nombre de empresa
   doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(79, 70, 229)
+  doc.text(companyName, coverWidth / 2, 120, { align: 'center' })
+
+  // Separador
+  doc.setDrawColor(79, 70, 229)
+  doc.setLineWidth(0.5)
+  doc.line(40, 128, coverWidth - 40, 128)
+
+  // Nombre del proyecto (título principal)
+  doc.setFontSize(22)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(30, 30, 40)
+  const projTitleLines = doc.splitTextToSize(projectName, coverWidth - 40)
+  doc.text(projTitleLines, coverWidth / 2, 145, { align: 'center' })
+
+  // Subtítulo
+  doc.setFontSize(13)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(79, 70, 229)
+  doc.text('Reporte de Proyecto', coverWidth / 2, 163, { align: 'center' })
+
+  // Fecha
+  doc.setFontSize(10)
+  doc.setTextColor(120, 120, 130)
   doc.text(new Date().toLocaleDateString('es-MX', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
-  }), 105, 150, { align: 'center' })
-  
-  doc.setFontSize(11)
-  doc.text(companyName, 105, 165, { align: 'center' })
+  }), coverWidth / 2, 175, { align: 'center' })
+
+  // Texto en barra inferior blanco
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(255, 255, 255)
+  doc.text(companyName, coverWidth / 2, coverHeight - 7, { align: 'center' })
 
   // Página de información
   doc.addPage()
   await drawHeader(doc, projectName, companyName, projectData.contractorLogo)
-  let yPos = 60
+  let yPos = 32
 
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
@@ -456,7 +540,7 @@ export async function generateProjectPDF(
     if (yPos > 260) {
       doc.addPage()
       drawHeader(doc, projectName, companyName, projectData.contractorLogo)
-      yPos = 60
+      yPos = 32
     }
 
     doc.setFontSize(11)
@@ -479,7 +563,7 @@ export async function generateProjectPDF(
   for (const stage of stages) {
     doc.addPage()
     await drawHeader(doc, projectName, companyName, projectData.contractorLogo)
-    yPos = 60
+    yPos = 32
 
     doc.setFontSize(14)
     doc.setFont('helvetica', 'bold')
@@ -514,7 +598,7 @@ export async function generateProjectPDF(
         if (yPos > 240) {
           doc.addPage()
           await drawHeader(doc, projectName, companyName, projectData.contractorLogo)
-          yPos = 60
+          yPos = 32
         }
 
         try {
