@@ -138,6 +138,34 @@ async function drawHeader(
   doc.setTextColor(0, 0, 0)
 }
 
+// Dibuja un título de sección con línea separadora debajo
+function drawSectionTitle(doc: jsPDF, title: string, x: number, y: number): number {
+  const pageWidth = doc.internal.pageSize.getWidth()
+  doc.setFontSize(13)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(30, 30, 40)
+  doc.text(title, x, y)
+  y += 3
+  doc.setDrawColor(79, 70, 229)
+  doc.setLineWidth(0.4)
+  doc.line(x, y, pageWidth - x, y)
+  return y + 8
+}
+
+// Agrega número de página en todas las páginas excepto la portada
+function addPageNumbers(doc: jsPDF) {
+  const total = doc.getNumberOfPages()
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
+  for (let i = 2; i <= total; i++) {
+    doc.setPage(i)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(160, 160, 170)
+    doc.text(`Página ${i - 1} de ${total - 1}`, pageWidth - 12, pageHeight - 6, { align: 'right' })
+  }
+}
+
 // Generar PDF de una etapa específica
 export async function generateStagePDF(
   projectData: ProjectData,
@@ -160,10 +188,6 @@ export async function generateStagePDF(
 
   // Barra inferior morada
   doc.rect(0, coverHeight - 18, coverWidth, 18, 'F')
-
-  // Línea de acento vertical izquierda
-  doc.setFillColor(120, 113, 240)
-  doc.rect(0, 18, 6, coverHeight - 36, 'F')
 
   // Logo centrado (si existe)
   if (projectData.contractorLogo) {
@@ -268,11 +292,7 @@ export async function generateStagePDF(
 
   // ── Evidencias fotográficas ───────────────────────────────────────────────
   if (evidences.length > 0) {
-    doc.setFontSize(13)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text('Evidencias Fotográficas', 20, yPos)
-    yPos += 10
+    yPos = drawSectionTitle(doc, 'Evidencias Fotográficas', 20, yPos)
 
     for (const ev of evidences) {
       if (yPos > 240) {
@@ -314,11 +334,7 @@ export async function generateStagePDF(
       yPos += 6
     }
 
-    doc.setFontSize(13)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text('Documentos Externos', 20, yPos)
-    yPos += 10
+    yPos = drawSectionTitle(doc, 'Documentos Externos', 20, yPos)
 
     const pageWidth = doc.internal.pageSize.getWidth()
 
@@ -402,6 +418,9 @@ export async function generateStagePDF(
     doc.text(projectData.clientName, 145, yPos + 56, { align: 'center' })
   }
 
+  // Números de página (excepto portada)
+  addPageNumbers(doc)
+
   // Descargar
   const fileName = `${projectName.replace(/[^a-z0-9]/gi, '_')}_${stageName.replace(/[^a-z0-9]/gi, '_')}.pdf`
   doc.save(fileName)
@@ -427,10 +446,6 @@ export async function generateProjectPDF(
 
   // Barra inferior morada
   doc.rect(0, coverHeight - 18, coverWidth, 18, 'F')
-
-  // Línea de acento vertical izquierda
-  doc.setFillColor(120, 113, 240)
-  doc.rect(0, 18, 6, coverHeight - 36, 'F')
 
   // Logo centrado (si existe)
   if (projectData.contractorLogo) {
@@ -485,11 +500,7 @@ export async function generateProjectPDF(
   await drawHeader(doc, projectName, companyName, projectData.contractorLogo)
   let yPos = 32
 
-  doc.setFontSize(16)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('Información del Proyecto', 20, yPos)
-  yPos += 15
+  yPos = drawSectionTitle(doc, 'Información del Proyecto', 20, yPos)
 
   doc.setFontSize(11)
   doc.setFont('helvetica', 'normal')
@@ -530,11 +541,7 @@ export async function generateProjectPDF(
   yPos += 15
 
   // Resumen de etapas
-  doc.setFontSize(14)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('Resumen de Etapas', 20, yPos)
-  yPos += 10
+  yPos = drawSectionTitle(doc, 'Resumen de Etapas', 20, yPos)
 
   stages.forEach((stage, idx) => {
     if (yPos > 260) {
@@ -588,11 +595,7 @@ export async function generateProjectPDF(
     const evidences = allEvidences[stage.id] ?? []
     
     if (evidences.length > 0) {
-      doc.setFontSize(11)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(0, 0, 0)
-      doc.text('Evidencias:', 20, yPos)
-      yPos += 10
+      yPos = drawSectionTitle(doc, 'Evidencias', 20, yPos)
 
       for (const ev of evidences) {
         if (yPos > 240) {
@@ -660,6 +663,9 @@ export async function generateProjectPDF(
     doc.setTextColor(100, 100, 100)
     doc.text(projectData.clientName, 145, yPos + 56, { align: 'center' })
   }
+
+  // Números de página (excepto portada)
+  addPageNumbers(doc)
 
   const fileName = `${projectName.replace(/[^a-z0-9]/gi, '_')}_completo.pdf`
   doc.save(fileName)
