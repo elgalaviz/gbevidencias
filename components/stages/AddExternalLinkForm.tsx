@@ -106,8 +106,8 @@ export default function AddExternalLinkForm({ stageId, onSuccess, onCancel }: Ad
 
         <p className="text-sm text-gray-500 mb-5">¿Cómo quieres agregar el archivo?</p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Opción Google Drive Picker */}
+        <div className="grid grid-cols-1 gap-3">
+          {/* Opción Google Drive Picker — comentado hasta aprobación de Google
           <button
             onClick={() => setMode('picker')}
             className="flex flex-col items-center gap-3 p-5 border-2 border-gray-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-all group"
@@ -125,6 +125,7 @@ export default function AddExternalLinkForm({ stageId, onSuccess, onCancel }: Ad
               <p className="text-xs text-gray-400 mt-0.5">Abre el selector nativo</p>
             </div>
           </button>
+          */}
 
           {/* Opción Manual */}
           <button
