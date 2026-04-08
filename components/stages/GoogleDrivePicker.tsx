@@ -16,7 +16,7 @@ interface GoogleDrivePickerProps {
 
 type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
-const SCOPES = 'https://www.googleapis.com/auth/drive.readonly'
+const SCOPES = 'https://www.googleapis.com/auth/drive.file'
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? ''
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY ?? ''
 
